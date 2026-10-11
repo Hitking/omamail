@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "omamail": {
+      "command": "node",
+      "args": [
+        "/home/masoud/Projects/content-studio/scripts/mcp/server.mjs",
+        "--manifest",
+        "/home/masoud/Projects/omamail/scripts/mcp/project.json"
+      ]
+    }
+  }
+}

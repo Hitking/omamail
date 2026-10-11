@@ -1,0 +1,44 @@
+{
+  "name": "omamail",
+  "title": "Omamail — an Omarchy desktop mail client",
+  "serverVersion": "1.0.0",
+  "root": "../..",
+  "summary": "Mail as a native Omarchy window rather than a browser tab: a Quickshell plugin that reads, triages and answers mail over the Gmail API, over the HEY CLI, or over plain IMAP/SMTP for everything else. It runs inside the omarchy-shell process that is already there, follows the active theme, and puts an unread count in the bar. A desktop application, not a service — it exposes no HTTP surface of its own.",
+  "urls": {
+    "install": "install.sh — installs into the running omarchy-shell",
+    "entryPoints": "Service.qml (long-lived host) · BarWidget.qml (bar trigger) · App.qml (the window)"
+  },
+  "apps": [
+    { "path": "providers", "stack": "QML + JS", "role": "the mail backends: Gmail API, HEY CLI, IMAP/SMTP, and the auth/credential managers behind them" },
+    { "path": "message", "stack": "QML", "role": "the shared message resource every provider normalizes into" },
+    { "path": "account", "stack": "QML", "role": "account state and the add-a-mailbox flow" },
+    { "path": "cache", "stack": "QML + JS", "role": "local storage; the only layer allowed to persist" },
+    { "path": "components", "stack": "QML", "role": "the interaction and layout primitives the feature views compose" },
+    { "path": "compose", "stack": "QML", "role": "writing and sending" },
+    { "path": "calendar", "stack": "QML", "role": "the calendar surface" },
+    { "path": "bar", "stack": "QML", "role": "the shell-facing widget and its settings bridge" }
+  ],
+  "docs": {
+    "roots": ["docs", "."],
+    "index": "docs/ARCHITECTURE.md",
+    "primer": ["AGENTS.md", "docs/ARCHITECTURE.md", "docs/SPEC.md"]
+  },
+  "symbols": {
+    "scan": ["providers", "message", "account", "cache", "components", "compose", "calendar", "bar"],
+    "ext": [".qml", ".js"]
+  },
+  "auth": "There is no server and no session: credentials belong to the person running the shell. Gmail uses OAuth through AuthManager, HEY delegates to the HEY CLI's own login, and IMAP/SMTP hold passwords in the local credential store (providers/Credentials.js). Nothing authenticates *to* Omamail.",
+  "integrations": [
+    { "direction": "out", "peer": "Gmail API", "how": "GmailApiClient / GmailApi.js, OAuth via AuthManager", "doc": "docs/ARCHITECTURE.md" },
+    { "direction": "out", "peer": "HEY (37signals)", "how": "HeyClient drives the official HEY CLI rather than scraping the web app", "doc": "docs/ARCHITECTURE.md" },
+    { "direction": "out", "peer": "any IMAP/SMTP mailbox", "how": "the fallback provider for everything else", "doc": "docs/ARCHITECTURE.md" },
+    { "direction": "in", "peer": "omarchy-shell", "how": "the shell constructs Service.qml and hosts BarWidget.qml; the theme, fonts and density all come from the active Omarchy theme", "doc": "docs/ARCHITECTURE.md" }
+  ],
+  "gotchas": [
+    "Five layers with dependencies pointing one way: shell entry points → window composition → domain modules → primitives → feature views. A view may ask the application to act, but must never reach for provider knowledge or mutate storage itself.",
+    "The visual system sits outside all five layers: colours, type, spacing, radii, icons and density come from the active Omarchy theme through App.qml and semantic component properties — never hard-coded.",
+    "GPUI and GPUI Component supply the architectural model (stable identity, explicit state ownership, controlled values, semantic events, behavior/presentation separation) translated into QML properties, signals and Qt lifecycle — not reproduced as Rust APIs.",
+    "The repository root holds only the QML entry points the shell loads. Service.qml owns what must outlive the window; App.qml owns navigation, focus context and non-popup surfaces.",
+    "A provider normalizes mail into the shared message resource and stops there — it never knows which row, popup or page is visible."
+  ]
+}
